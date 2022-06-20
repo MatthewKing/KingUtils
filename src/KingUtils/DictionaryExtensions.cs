@@ -1,4 +1,4 @@
-﻿namespace KingUtils;
+﻿namespace System.Collections.Generic;
 
 /// <summary>
 /// Extension methods for dictionaries.

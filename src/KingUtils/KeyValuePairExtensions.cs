@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace KingUtils;
+namespace System.Collections.Generic;
 
 /// <summary>
 /// Extension methods for key/value pairs.
