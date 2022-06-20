@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace KingUtils;
+﻿namespace KingUtils;
 
 /// <summary>
 /// Extension methods for strings.

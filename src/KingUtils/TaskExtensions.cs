@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace KingUtils;
+﻿namespace KingUtils;
 
 /// <summary>
 /// Extension methods for tasks.

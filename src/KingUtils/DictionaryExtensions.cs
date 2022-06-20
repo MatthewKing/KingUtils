@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace KingUtils;
+﻿namespace KingUtils;
 
 /// <summary>
 /// Extension methods for dictionaries.
