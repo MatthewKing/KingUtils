@@ -1,4 +1,6 @@
-﻿namespace System.Collections.Generic;
+﻿#if !NET5_0_OR_GREATER
+
+namespace System.Collections.Generic;
 
 /// <summary>
 /// Extension methods for read-only dictionaries.
@@ -47,3 +49,5 @@ public static class ReadOnlyDictionaryExtensions
         return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
     }
 }
+
+#endif
