@@ -5,7 +5,6 @@
 /// </summary>
 public static class DictionaryExtensions
 {
-#if !NET5_0_OR_GREATER
     /// <summary>
     /// Returns the value associated with the specified key, or the default for the value
     /// type if no value was found.
@@ -47,5 +46,4 @@ public static class DictionaryExtensions
 
         return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
     }
-#endif
 }
