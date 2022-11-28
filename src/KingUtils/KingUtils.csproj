@@ -10,7 +10,7 @@
     <PackageProjectUrl>https://github.com/MatthewKing/KingUtils</PackageProjectUrl>
     <RepositoryUrl>https://github.com/MatthewKing/KingUtils</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
   </PropertyGroup>
 
   <PropertyGroup>
