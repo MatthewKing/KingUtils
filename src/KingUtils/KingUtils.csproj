@@ -8,6 +8,7 @@
     <Copyright>Copyright Matthew King.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/MatthewKing/KingUtils</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/MatthewKing/KingUtils</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Version>2.1.0</Version>
@@ -26,5 +27,11 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\readme.md" Pack="true" PackagePath="\">
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
 
 </Project>
