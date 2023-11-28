@@ -8,6 +8,29 @@ namespace KingUtils;
 /// </summary>
 public static class Base16
 {
+#if NET5_0_OR_GREATER
+    /// <summary>
+    /// Encodes the specified bytes as a Base16 value.
+    /// </summary>
+    /// <param name="bytes">The bytes to encode.</param>
+    /// <returns>A Base16 string representation of the bytes.</returns>
+    public static string Encode(Span<byte> bytes)
+    {
+        if (bytes.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder(bytes.Length * 2);
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            sb.AppendFormat("{0:X2}", bytes[i]);
+        }
+
+        return sb.ToString();
+    }
+#endif
+
     /// <summary>
     /// Encodes the specified byte array as a Base16 value.
     /// </summary>
@@ -18,6 +41,11 @@ public static class Base16
         if (bytes is null)
         {
             throw new ArgumentNullException(nameof(bytes));
+        }
+
+        if (bytes.Length == 0)
+        {
+            return string.Empty;
         }
 
         var sb = new StringBuilder(bytes.Length * 2);

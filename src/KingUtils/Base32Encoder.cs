@@ -38,6 +38,53 @@ public sealed class Base32Encoder
         }
     }
 
+#if NET5_0_OR_GREATER
+    /// <summary>
+    /// Encodes the specified bytes as a Base32 value.
+    /// </summary>
+    /// <param name="bytes">The bytes to encode.</param>
+    /// <returns>A Base32 string representation of the bytes.</returns>
+    public string Encode(Span<byte> bytes)
+    {
+        if (bytes.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var outputLength = (bytes.Length * 8 + Shift - 1) / Shift;
+        var sb = new StringBuilder(outputLength);
+
+        var offset = 0;
+        var last = bytes.Length;
+        int buffer = bytes[offset++];
+        var bitsLeft = 8;
+        while (bitsLeft > 0 || offset < last)
+        {
+            if (bitsLeft < Shift)
+            {
+                if (offset < last)
+                {
+                    buffer <<= 8;
+                    buffer |= bytes[offset++] & 0xff;
+                    bitsLeft += 8;
+                }
+                else
+                {
+                    var pad = Shift - bitsLeft;
+                    buffer <<= pad;
+                    bitsLeft += pad;
+                }
+            }
+
+            var index = Mask & (buffer >> (bitsLeft - Shift));
+            bitsLeft -= Shift;
+            sb.Append(_alphabet[index]);
+        }
+
+        return sb.ToString();
+    }
+#endif
+
     /// <summary>
     /// Encodes the specified byte array as a Base32 value.
     /// </summary>
