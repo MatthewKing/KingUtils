@@ -145,7 +145,7 @@ public static class HumanReadableDateAndTimeExtensions
 
         var items = new List<string>();
 
-        var seconds = Math.Abs((int)value.TotalSeconds);
+        var seconds = Math.Abs((long)value.TotalSeconds);
 
         if (IsInRange(TimeUnit.Year, minUnit, maxUnit) && seconds > SECONDS_PER_YEAR)
         {
