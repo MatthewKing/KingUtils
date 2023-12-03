@@ -20,6 +20,10 @@ var truncatedString = longString.Truncate(80);
 var truncatedStringWithSuffix = longString.Truncate(80, "...");
 var joinedString = (new[] { "one", "two", "three" }).ToJoinedString(coordinatingConjunction: "and", serialComma: true); // "one, and two, and three"
 
+// Simple string encryption and decryption:
+var encryptedValue = CryptoHelper.EncryptString("string to encrypt", "password", 16, 100_000);
+var decryptedValue = CryptoHelper.DecryptString(encryptedValue, "password"); // Salt and iterations are encapsulated in the encrypted value, so don't need to provide them.
+
 // Date and time extensions:
 var humanReadableDateTime = dateTime.ToRelativeHumanReadableString(); // "4 hours and 15 minutes ago"
 var humanReadableTimeSpan = timeSpan.ToHumanReadableString(); // "8 minutes and 20 seconds"
