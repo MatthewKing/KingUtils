@@ -1,11 +1,11 @@
 ﻿using System.Text;
 
-namespace KingUtils;
+namespace KingUtils.Internal;
 
 /// <summary>
-/// Provides Base32 encoding/decoding functionality.
+/// The default Base32 implementation. Takes an arbitrary alphabet.
 /// </summary>
-public sealed class Base32Encoder
+public sealed class Base32Default : IBase32
 {
     private const int Shift = 5;
     private const int Mask = 31;
@@ -14,10 +14,10 @@ public sealed class Base32Encoder
     private IDictionary<char, int> _alphabetMap;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Base32Encoder"/> class.
+    /// Initializes a new instance of the <see cref="Base32Default"/> class.
     /// </summary>
     /// <param name="alphabet">The Base32 alphabet to use.</param>
-    public Base32Encoder(string alphabet)
+    public Base32Default(string alphabet)
     {
         if (alphabet is null)
         {
