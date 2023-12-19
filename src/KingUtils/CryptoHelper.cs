@@ -22,14 +22,15 @@ public static class CryptoHelper
     /// <param name="password">The password to use.</param>
     /// <param name="saltLength">The length of the salt.</param>
     /// <param name="iterations">The number of iterations.</param>
+    /// <param name="hashAlgorithmName">The hash algorithm to use with PBKDF2.</param>
     /// <returns>An string containing the encrypted data, the salt, and the number of iterations.</returns>
-    public static string EncryptBytes(byte[] data, string password, int saltLength, int iterations)
+    public static string EncryptBytes(byte[] data, string password, int saltLength, int iterations, HashAlgorithmName hashAlgorithmName)
     {
         var salt = GetRandomSalt(saltLength);
-        var (key, iv) = GetKeyAndIV(password, salt, iterations);
+        var (key, iv) = GetKeyAndIV(password, salt, iterations, hashAlgorithmName);
         var encryptedBytes = EncryptUsingAes(key, iv, data);
         var iterationsBytes = ConvertIntToByteArrayEndianAgnostic(iterations);
-        var output = string.Join(DELIMITER,
+        var output = string.Join(DELIMITER.ToString(),
             Base32.Crockford.Encode(encryptedBytes),
             Base32.Crockford.Encode(salt),
             Base32.Crockford.Encode(iterationsBytes));
@@ -44,10 +45,11 @@ public static class CryptoHelper
     /// <param name="password">The password to use.</param>
     /// <param name="saltLength">The length of the salt.</param>
     /// <param name="iterations">The number of iterations.</param>
+    /// <param name="hashAlgorithmName">The hash algorithm to use with PBKDF2.</param>
     /// <returns>An string containing the encrypted data, the salt, and the number of iterations.</returns>
-    public static string EncryptString(string data, string password, int saltLength, int iterations)
+    public static string EncryptString(string data, string password, int saltLength, int iterations, HashAlgorithmName hashAlgorithmName)
     {
-        return EncryptBytes(Encoding.UTF8.GetBytes(data), password, saltLength, iterations);
+        return EncryptBytes(Encoding.UTF8.GetBytes(data), password, saltLength, iterations, hashAlgorithmName);
     }
 
     /// <summary>
@@ -55,15 +57,16 @@ public static class CryptoHelper
     /// </summary>
     /// <param name="value">The value to decrypt.</param>
     /// <param name="password">The password to use.</param>
+    /// <param name="hashAlgorithmName">The hash algorithm to use with PBKDF2.</param>
     /// <returns>The decrypted data.</returns>
-    public static byte[] DecryptBytes(string value, string password)
+    public static byte[] DecryptBytes(string value, string password, HashAlgorithmName hashAlgorithmName)
     {
         var segments = value.Split(DELIMITER);
         var data = Base32.Crockford.Decode(segments[0]);
         var salt = Base32.Crockford.Decode(segments[1]);
         var iterationsBytes = Base32.Crockford.Decode(segments[2]);
         var iterations = ConvertByteArrayToIntEndianAgnostic(iterationsBytes);
-        var (key, iv) = GetKeyAndIV(password, salt, iterations);
+        var (key, iv) = GetKeyAndIV(password, salt, iterations, hashAlgorithmName);
 
         var decryptedBytes = DecryptUsingAes(key, iv, data);
 
@@ -75,13 +78,19 @@ public static class CryptoHelper
     /// </summary>
     /// <param name="value">The value to decrypt.</param>
     /// <param name="password">The password to use.</param>
+    /// <param name="hashAlgorithmName">The hash algorithm to use with PBKDF2.</param>
     /// <returns>The decrypted data.</returns>
-    public static string DecryptString(string value, string password)
+    public static string DecryptString(string value, string password, HashAlgorithmName hashAlgorithmName)
     {
-        return Encoding.UTF8.GetString(DecryptBytes(value, password));
+        return Encoding.UTF8.GetString(DecryptBytes(value, password, hashAlgorithmName));
     }
 
-    private static byte[] GetRandomSalt(int length)
+    /// <summary>
+    /// Returns a random salt of the specified length.
+    /// </summary>
+    /// <param name="length">The salt length.</param>
+    /// <returns>A random salt of the specified length.</returns>
+    public static byte[] GetRandomSalt(int length)
     {
 #if NET6_0_OR_GREATER
         return RandomNumberGenerator.GetBytes(length);
@@ -95,15 +104,25 @@ public static class CryptoHelper
 #endif
     }
 
-    private static (byte[], byte[]) GetKeyAndIV(string password, byte[] salt, int iterations)
+    private static (byte[], byte[]) GetKeyAndIV(string password, byte[] salt, int iterations, HashAlgorithmName hashAlgorithmName)
     {
 #if NET6_0_OR_GREATER
-        var deriveBytes = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, 48);
+        var deriveBytes = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, hashAlgorithmName, 48);
         var key = deriveBytes[0..32];
         var iv = deriveBytes[32..48];
         return (key, iv);
 #else
-        using var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256);
+#if NETSTANDARD2_0
+        if (hashAlgorithmName != HashAlgorithmName.SHA1)
+        {
+            throw new NotSupportedException("Only SHA1 is supported on NETSTANDARD 2.0.");
+        }
+
+        var passwordBytes = Encoding.UTF8.GetBytes(password);
+        using var deriveBytes = new Rfc2898DeriveBytes(passwordBytes, salt, iterations);
+#else
+        using var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations, hashAlgorithmName);
+#endif
         var key = deriveBytes.GetBytes(32);
         var iv = deriveBytes.GetBytes(16);
         return (key, iv);
