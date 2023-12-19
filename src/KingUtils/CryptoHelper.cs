@@ -10,10 +10,13 @@ public static class CryptoHelper
 {
     /// <summary>
     /// The delimiter to use to separate the data, salt, and iterations in the encrypted string.
-    /// Has to be something that won't otherwise occur in the string.
-    /// Since we're using Base32 Crockford, we can use any of the omitted characters.
     /// </summary>
-    private const char DELIMITER = 'L';
+    /// <remarks>
+    /// This has to be something that won't otherwise occur in the string.
+    /// Since we're using Base32 Crockford, we'll use "U", as it's the only regular letter
+    /// not otherwise used for encoding/decoding.
+    /// </remarks>
+    private const char DELIMITER = 'U';
 
     /// <summary>
     /// Encrypts the specified data using the specified password, salt length, and number of iterations.
@@ -30,10 +33,12 @@ public static class CryptoHelper
         var (key, iv) = GetKeyAndIV(password, salt, iterations, hashAlgorithmName);
         var encryptedBytes = EncryptUsingAes(key, iv, data);
         var iterationsBytes = ConvertIntToByteArrayEndianAgnostic(iterations);
+        var hashAlgorithmBytes = EncodeHashAlgorithm(hashAlgorithmName);
         var output = string.Join(DELIMITER.ToString(),
-            Base32.Crockford.Encode(encryptedBytes),
             Base32.Crockford.Encode(salt),
-            Base32.Crockford.Encode(iterationsBytes));
+            Base32.Crockford.Encode(iterationsBytes),
+            Base32.Crockford.Encode(hashAlgorithmBytes),
+            Base32.Crockford.Encode(encryptedBytes));
 
         return output;
     }
@@ -57,18 +62,22 @@ public static class CryptoHelper
     /// </summary>
     /// <param name="value">The value to decrypt.</param>
     /// <param name="password">The password to use.</param>
-    /// <param name="hashAlgorithmName">The hash algorithm to use with PBKDF2.</param>
     /// <returns>The decrypted data.</returns>
-    public static byte[] DecryptBytes(string value, string password, HashAlgorithmName hashAlgorithmName)
+    public static byte[] DecryptBytes(string value, string password)
     {
         var segments = value.Split(DELIMITER);
-        var data = Base32.Crockford.Decode(segments[0]);
-        var salt = Base32.Crockford.Decode(segments[1]);
-        var iterationsBytes = Base32.Crockford.Decode(segments[2]);
-        var iterations = ConvertByteArrayToIntEndianAgnostic(iterationsBytes);
-        var (key, iv) = GetKeyAndIV(password, salt, iterations, hashAlgorithmName);
 
-        var decryptedBytes = DecryptUsingAes(key, iv, data);
+        var saltBytes = Base32.Crockford.Decode(segments[0]);
+        var iterationsBytes = Base32.Crockford.Decode(segments[1]);
+        var hashAlgorithmBytes = Base32.Crockford.Decode(segments[2]);
+        var dataBytes = Base32.Crockford.Decode(segments[3]);
+
+        var iterations = ConvertByteArrayToIntEndianAgnostic(iterationsBytes);
+        var hashAlgorithm = DecodeHashAlgorithm(hashAlgorithmBytes);
+
+        var (key, iv) = GetKeyAndIV(password, saltBytes, iterations, hashAlgorithm);
+
+        var decryptedBytes = DecryptUsingAes(key, iv, dataBytes);
 
         return decryptedBytes;
     }
@@ -78,11 +87,10 @@ public static class CryptoHelper
     /// </summary>
     /// <param name="value">The value to decrypt.</param>
     /// <param name="password">The password to use.</param>
-    /// <param name="hashAlgorithmName">The hash algorithm to use with PBKDF2.</param>
     /// <returns>The decrypted data.</returns>
-    public static string DecryptString(string value, string password, HashAlgorithmName hashAlgorithmName)
+    public static string DecryptString(string value, string password)
     {
-        return Encoding.UTF8.GetString(DecryptBytes(value, password, hashAlgorithmName));
+        return Encoding.UTF8.GetString(DecryptBytes(value, password));
     }
 
     /// <summary>
@@ -102,6 +110,45 @@ public static class CryptoHelper
         }
         return salt;
 #endif
+    }
+
+    private static byte[] EncodeHashAlgorithm(HashAlgorithmName hashAlgorithmName)
+    {
+        byte b = hashAlgorithmName.Name switch
+        {
+            "SHA1" => 0,
+            "SHA256" => 1,
+            "SHA384" => 2,
+            "SHA512" => 3,
+            "SHA3-256" => 4,
+            "SHA3-384" => 5,
+            "SHA3-512" => 6,
+            _ => throw new NotSupportedException("Hash algorithm not supported."),
+        };
+
+        return [b];
+    }
+
+    private static HashAlgorithmName DecodeHashAlgorithm(byte[] bytes)
+    {
+        if (bytes is null || bytes.Length != 1)
+        {
+            throw new ArgumentException("Invalid hash algorithm.");
+        }
+
+        return bytes[0] switch
+        {
+            0 => HashAlgorithmName.SHA1,
+            1 => HashAlgorithmName.SHA256,
+            2 => HashAlgorithmName.SHA384,
+            3 => HashAlgorithmName.SHA512,
+#if NET8_0_OR_GREATER
+            4 => HashAlgorithmName.SHA3_256,
+            5 => HashAlgorithmName.SHA3_384,
+            6 => HashAlgorithmName.SHA3_512,
+#endif
+            _ => throw new NotSupportedException("Hash algorithm not supported."),
+        };
     }
 
     private static (byte[], byte[]) GetKeyAndIV(string password, byte[] salt, int iterations, HashAlgorithmName hashAlgorithmName)
